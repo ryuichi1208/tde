@@ -8,5 +8,5 @@ module "vpc" {
 }
 
 module "vpc2" {
-  source = "git@github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v2.0.0"
+  source = "git@github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v2.78.0"
 }
