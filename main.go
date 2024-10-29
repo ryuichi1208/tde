@@ -6,11 +6,14 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
+
+var debug bool
 
 // usage prints how to use the program
 func usage() {
@@ -23,6 +26,20 @@ func checkFileExists(file string) error {
 	return err
 }
 
+func ExtractPathFromURL(url string) string {
+	re := regexp.MustCompile(`\.git/+(.*?)(\?|$)`)
+	match := re.FindStringSubmatch(url)
+
+	if len(match) > 1 && match[1] != "" {
+		if debug {
+			fmt.Println("[DEBUG] Match found:", match[1])
+		}
+		return "/" + match[1]
+	} else {
+		return ""
+	}
+}
+
 // findModuleSource extracts "source" attributes from module blocks in the HCL body
 func findModuleSource(body *hclwrite.Body) []string {
 	var moduleSources []string
@@ -31,6 +48,16 @@ func findModuleSource(body *hclwrite.Body) []string {
 			if attr := block.Body().GetAttribute("source"); attr != nil {
 				// Extract source value and clean up surrounding quotes
 				source := strings.Trim(string(attr.Expr().BuildTokens(nil).Bytes()), "\"")
+				if debug {
+					fmt.Println("[DEBUG] Found module source:", source)
+				}
+				source = strings.TrimPrefix(source, " \"")
+				if source == "" || strings.HasPrefix(source, "https://") {
+					continue
+				}
+				if strings.HasPrefix(source, "git@") {
+					source = ExtractPathFromURL(source)
+				}
 				moduleSources = append(moduleSources, source)
 			}
 		}
@@ -70,10 +97,17 @@ func findTFFile(dirPath string) ([]string, error) {
 		return nil
 	})
 
+	if debug {
+		fmt.Println("[DEBUG] Found .tf files:", tfFiles)
+	}
 	return tfFiles, err
 }
 
 func main() {
+	if debug {
+		fmt.Println("[DEBUG] Debug mode enabled")
+	}
+
 	// Check command-line arguments
 	if len(os.Args) < 2 {
 		usage()
@@ -117,5 +151,11 @@ func main() {
 				}
 			}
 		}
+	}
+}
+
+func init() {
+	if os.Getenv("DEBUG") != "" {
+		debug = true
 	}
 }

@@ -79,3 +79,40 @@ module "example" {
 	main()
 
 }
+
+func TestExtractPathFromURL(t *testing.T) {
+	tests := []struct {
+		url      string
+		expected string
+	}{
+		{
+			url:      "git@github.com:test-inc/test-infra.git//modules/dynamodb/on_demand?ref=on_demand@v1",
+			expected: "/modules/dynamodb/on_demand",
+		},
+		{
+			url:      "git@github.com:test-inc/test-infra.git//modules/elb/ecs?ref=elb_ecs@v3",
+			expected: "/modules/elb/ecs",
+		},
+		{
+			url:      "git@github.com:test-inc/test-infra.git//modules/s3/bucket",
+			expected: "/modules/s3/bucket",
+		},
+		{
+			url:      "git@github.com:test-inc/test-infra.git/",
+			expected: "",
+		},
+		{
+			url:      "git@github.com:test-inc/test-infra.git//modules/invalid_format",
+			expected: "/modules/invalid_format",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.url, func(t *testing.T) {
+			got := ExtractPathFromURL(tt.url)
+			if got != tt.expected {
+				t.Errorf("ExtractPathFromURL(%s) = %v; want %v", tt.url, got, tt.expected)
+			}
+		})
+	}
+}

@@ -4,5 +4,9 @@ resource aws_instance "web" {
 }
 
 module "vpc" {
-  source = "./vpc"
+  source = "../t/module/test"
+}
+
+module "vpc2" {
+  source = "git@github.com/terraform-aws-modules/terraform-aws-vpc.git?ref=v2.0.0"
 }
